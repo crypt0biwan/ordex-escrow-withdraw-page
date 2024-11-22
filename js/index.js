@@ -96,7 +96,7 @@ document.getElementById("signButton").addEventListener("click", async (e) => {
         console.log(`Signed message: ${signature}`);
 
         const post_msg = {
-            "client": "0x54d3f33f3Ad14f64e7189BeD98a25D8663C864Fb",
+            "client": account,
             "itemIds": items,
             "clientSignature": signature
         }
