@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <title>Ordex escrow ethscription bulk withdrawal</title>
+    <script src="js/web3.min.js"></script>
+    <script src="js/buffer.js"></script>
+</head>
+<body>
+    <div class="container-fluid bg-black text-white mb-0 px-5">
+        <h3 class="pt-4">Ordex escrow ethscription bulk withdrawal</h3>
+        
+        <ol class="pb-3 mb-0">
+            <li>First, connect your metamask wallet which escrowed the ethscriptions</li>
+            <li>Second, put in the ethscription id (0x....)</li>
+            <li>Third, hit the "sign and withdraw" button. It will sign the msg, send the msg to ordex API and initiate a withdraw tx</li>
+        </ol>
+
+        <p class="pb-3">Donations appreciated: 0x54d3f33f3Ad14f64e7189BeD98a25D8663C864Fb</p>
+    </div>
+
+    <div class="container-fluid mb-0 pt-4 px-5">
+        <div class="alert alert-warning" role="alert">
+            <strong>Warning: if you see a really high gas fee for the withdrawal do NOT proceed!!!</strong>
+        </div>
+    </div>
+
+    <div class="container-fluid mb-0 pt-3 px-5">
+        <form class="">
+            <div class="row mb-5">
+                <div class="col">
+                    <button id="connectButton" class="btn btn-primary">Connect to MetaMask</button>
+
+                    <span id="account" class="ps-2 d-none"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="mb-2">
+                        <label for="ethscriptionid" class="form-label"><strong>Ethscription id</strong></label>
+                        <input type="text" class="form-control" id="ethscriptionid" placeholder="0x....">
+                    </div>
+                </div>
+            </div>
+
+            <button id="signButton" class="btn btn-primary" disabled>Sign ordex msg and withdraw</button>
+
+            <div id="success-msg" class="alert alert-success mt-3 d-none" role="alert">
+               
+            </div>
+
+            <div id="error-msg" class="alert alert-danger mt-3 d-none" role="alert">
+               
+            </div>
+        </form>
+    </div>
+
+    <script src="js/index.js"></script>
+</body>
+</html>
