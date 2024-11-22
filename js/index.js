@@ -30,6 +30,9 @@ const send_contract_withdrawal = async (ordex_api_response) => {
         };
 
         document.getElementById("signButton").disabled = true
+
+        console.log('sending..')
+
         await contract.methods.bulkWithdrawItems(confirmation_obj, signature).send({ from: account });
 
         document.getElementById("error-msg").classList.add("d-none")
