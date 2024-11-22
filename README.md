@@ -1,5 +1,7 @@
 # Ordex escrow withdraw page
 
+Couldn't have done this without the help/preparation of Hirsch, see [here](https://x.com/0xHirsch/status/1859687416032002412)
+
 ## Dependencies
 
 - [buffer.js](https://github.com/feross/buffer)
