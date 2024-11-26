@@ -65,6 +65,26 @@ window.addEventListener("load", async () => {
     }
 });
 
+const get_ethscription_balances = async () => {
+    try {
+        const balances = await get_all_balances(account)
+        const existing_balances = balances.filter(b => b.deleted === false)
+        const sorted_balances = existing_balances.sort((a, b) => a.meta.number - b.meta.number)
+        const escrowed_balances = sorted_balances.filter(b => b.extension.escrowState === 'PENDING')
+        
+        if(escrowed_balances.length > 0) {
+            disable_button('fillButton', false)
+        }
+
+        parse_balances('items', sorted_balances.filter(b => b.extension.escrowState === 'EMPTY'))
+        parse_balances('escrows', escrowed_balances, 'PENDING')
+    
+        document.getElementById('numberOfEscrowedEthscriptions').innerHTML = ` (${escrowed_balances.length})`
+    } catch (error) {
+        console.error(error)
+    }
+}
+
 document.getElementById("connectButton").addEventListener("click", async (e) => {
     try {
         e.preventDefault();
@@ -76,6 +96,7 @@ document.getElementById("connectButton").addEventListener("click", async (e) => 
         contract = new web3.eth.Contract(contractABI, contractAddress);
 
         disable_button("connectButton", true)
+        disable_button('signButton', false)
 
         document.getElementById("account").innerHTML = `Connected to: ${account}`;
         document.getElementById("account").classList.remove("d-none");
@@ -83,20 +104,7 @@ document.getElementById("connectButton").addEventListener("click", async (e) => 
         document.getElementById("items").innerHTML = 'Loading..'
         document.getElementById("escrows").innerHTML = 'Loading..'
 
-        const balances = await get_all_balances(account)
-        const existing_balances = balances.filter(b => b.deleted === false)
-        const sorted_balances = existing_balances.sort((a, b) => a.meta.number - b.meta.number)
-        const escrowed_balances = sorted_balances.filter(b => b.extension.escrowState === 'PENDING')
-        
-        if(escrowed_balances.length > 0) {
-            disable_button('fillButton', false)
-            disable_button('signButton', false)
-        }
-
-        parse_balances('items', sorted_balances.filter(b => b.extension.escrowState === 'EMPTY'))
-        parse_balances('escrows', escrowed_balances, 'PENDING')
-    
-        document.getElementById('numberOfEscrowedEthscriptions').innerHTML = ` (${escrowed_balances.length})`
+        get_ethscription_balances()
     
     } catch (error) {
         console.error("Failed to connect to MetaMask:", error);
@@ -235,23 +243,31 @@ document.getElementById("fillButton").addEventListener("click", async (e) => {
     }
 });
 
-const parseEthscriptionData = (rawContent, number, name) => {
-    if(rawContent.includes('data:image/')) {
-        return `<img title="Ethscription #${number} (${name})" src="${rawContent}" class="img-fluid">`
+const parseEthscriptionData = (ethscription_id, rawContent, number, name) => {
+    try {
+        if(rawContent.includes('data:image/')) {
+            return `<img title="Ethscription #${number} (${name})" src="${rawContent}" class="img-fluid">`
+        }
+
+        if(rawContent.includes('data:text/html;')) {
+            return `<iframe src="${rawContent}" sandbox="allow-scripts"></iframe>`
+        }
+
+        if(rawContent.includes('data:application/json;')) {
+            const stripped_json = rawContent.replace('data:application/json;base64,', '')
+
+            // TODO encoded json with atob
+            const decoded_json = stripped_json
+            // const decoded_json = atob(stripped_json)
+
+            return `<span title="Ethscription #${number} (${name})">${decoded_json}</span>`
+        }
+
+        return `<span title="Ethscription #${number} (${name})">${rawContent.replace('data:,', '')}</span>`
+    } catch(e) {
+        console.log(rawContent)
+        console.log(`Error for ethscription ${ethscription_id}`, e)
     }
-
-    if(rawContent.includes('data:text/html;')) {
-        return `<iframe src="${rawContent}" sandbox="allow-scripts"></iframe>`
-    }
-
-    if(rawContent.includes('data:application/json;')) {
-        const stripped_json = rawContent.replace('data:application/json;base64,', '')
-        const decoded_json = atob(stripped_json)
-
-        return `<span title="Ethscription #${number} (${name})">${decoded_json}</span>`
-    }
-
-    return `<span title="Ethscription #${number} (${name})">${rawContent.replace('data:,', '')}</span>`
 }
 
 const parse_balances = (container, balances, state = 'EMPTY') => {
@@ -268,7 +284,7 @@ const parse_balances = (container, balances, state = 'EMPTY') => {
 
         html += `<div class="col-12 col-sm-6 col-md-3 col-xl-1">`
         html += `<a href="https://ethscriptions.com/ethscriptions/${ethscription_id}" target="_blank">`
-        html += parseEthscriptionData(rawContent, number, name)
+        html += parseEthscriptionData(ethscription_id, rawContent, number, name)
         html += `</a>`
         html += `</div>`
     })
