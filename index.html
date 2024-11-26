@@ -7,15 +7,44 @@
     <title>Ordex escrow ethscription bulk withdrawal</title>
     <script src="js/web3.min.js"></script>
     <script src="js/buffer.js"></script>
+
+    <style>
+        body { padding-bottom: 100px; }
+        .img-fluid {
+            width: 100%;
+            image-rendering: pixelated;
+        }
+
+        #itemsContainer img { opacity: 0.5; }
+        .ethscriptions a { 
+            display: block;
+            border: 1px solid black; 
+            text-decoration: none;
+            color: black;
+            text-wrap: auto;
+            word-wrap: break-word;
+            text-overflow: ellipsis;
+            margin-bottom: 10px;
+            text-align: center;
+            max-height: 200px;
+        }
+
+        .ethscriptions span { font-size: 8px; }
+        .ethscriptions iframe {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid bg-black text-white mb-0 px-5">
         <h3 class="pt-4">Ordex escrow ethscription bulk withdrawal</h3>
         
         <ol class="pb-3 mb-0">
-            <li>First, connect your metamask wallet which escrowed the ethscriptions</li>
-            <li>Second, put in the ethscription id (0x....)</li>
-            <li>Third, hit the "sign and withdraw" button. It will sign the msg, send the msg to ordex API and initiate a withdraw tx</li>
+            <li>First, connect your metamask wallet which escrowed the ethscriptions (make sure you're on the ETH mainnet)</li>
+            <li>Second, if there's any ethscriptions in escrow, click the "Fill in these ethscription ids in the input box below" button OR put in the ethscription id manually (0x....)</li>
+            <li>Third, hit the "sign and withdraw" button. It will sign the msg, send the msg to ordex API and initiate a withdraw tx (you'll see 2 metamask popups)</li>
         </ol>
 
         <p class="pb-3">Donations appreciated: 0x54d3f33f3Ad14f64e7189BeD98a25D8663C864Fb</p>
@@ -28,19 +57,40 @@
     </div>
 
     <div class="container-fluid mb-0 pt-3 px-5">
-        <form class="">
-            <div class="row mb-5">
-                <div class="col">
-                    <button id="connectButton" class="btn btn-primary">Connect to MetaMask</button>
+        <div class="row mb-5">
+            <div class="col">
+                <button id="connectButton" class="btn btn-primary">Connect to MetaMask</button>
 
-                    <span id="account" class="ps-2 d-none"></span>
-                </div>
+                <span id="account" class="ps-2 d-none"></span>
             </div>
+        </div>
+       
+        <h3>Ethscriptions you had in escrow once (oldest first)</h3>
+        <hr />
+        <div id="itemsContainer" class="container">
+            <div id="items" class="row ethscriptions">
+               Connect wallet..
+            </div>
+        </div>
 
+        <hr />
+
+
+        <h3 class="mt-5">Ethscriptions currently still in escrow <span id="numberOfEscrowedEthscriptions"></span> (oldest first)</h3>
+        <hr />
+        <div id="escrowsContainer" class="container">
+            <div id="escrows" class="row ethscriptions">
+                Connect wallet..
+            </div>
+        </div>
+        <button id="fillButton" class="mt-4 btn btn-primary" disabled>Fill in these ethscription ids in the input box below</button>
+        <hr />
+
+        <form class="">
             <div class="row">
                 <div class="col">
                     <div class="mb-2">
-                        <label for="ethscriptionid" class="form-label"><strong>Ethscription id</strong></label>
+                        <label for="ethscriptionid" class="form-label"><strong>Ethscription id(s), comma separated when multiple, no spaces!</strong></label>
                         <input type="text" class="form-control" id="ethscriptionid" placeholder="0x....">
                     </div>
                 </div>

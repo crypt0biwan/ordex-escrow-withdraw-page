@@ -5,8 +5,13 @@ let account;
 let signed_msg;
 let contract;
 
+const ethscriptionid_balances = []
 const contractAddress = "0xC33F8610941bE56fB0d84E25894C0d928CC97ddE";
 let contractABI;
+
+const disable_button = (button, state) => {
+    document.getElementById(button).disabled = state
+}
 
 const send_contract_withdrawal = async (ordex_api_response) => {
     try {
@@ -39,11 +44,12 @@ const send_contract_withdrawal = async (ordex_api_response) => {
         document.getElementById("success-msg").classList.remove("d-none")
         document.getElementById("success-msg").innerHTML = `Transaction sent successfully!`
 
-        document.getElementById("signButton").disabled = false
+        disable_button("signButton", false)
     } catch (error) {
         document.getElementById("success-msg").classList.add("d-none")
         document.getElementById("error-msg").classList.remove("d-none")
         document.getElementById("error-msg").innerHTML = `Error sending transaction. Check console for details.`
+        document.getElementById("ethscriptionid").value = ''
 
         console.error(error);
     }
@@ -68,10 +74,28 @@ document.getElementById("connectButton").addEventListener("click", async (e) => 
 
         contract = new web3.eth.Contract(contractABI, contractAddress);
 
-        document.getElementById("connectButton").disabled = true;
-        document.getElementById("signButton").disabled = false;
+        disable_button("connectButton", true)
+
         document.getElementById("account").innerHTML = `Connected to: ${account}`;
         document.getElementById("account").classList.remove("d-none");
+
+        document.getElementById("items").innerHTML = 'Loading..'
+        document.getElementById("escrows").innerHTML = 'Loading..'
+
+        const balances = await get_all_balances(account)
+        const existing_balances = balances.filter(b => b.deleted === false)
+        const sorted_balances = existing_balances.sort((a, b) => a.meta.number - b.meta.number)
+        const escrowed_balances = sorted_balances.filter(b => b.extension.escrowState === 'PENDING')
+        
+        if(escrowed_balances.length > 0) {
+            document.getElementById("fillButton").disabled = false
+        }
+
+        parse_balances('items', sorted_balances.filter(b => b.extension.escrowState === 'EMPTY'))
+        parse_balances('escrows', escrowed_balances, 'PENDING')
+    
+        document.getElementById('numberOfEscrowedEthscriptions').innerHTML = ` (${escrowed_balances.length})`
+    
     } catch (error) {
         console.error("Failed to connect to MetaMask:", error);
         alert("Failed to connect to MetaMask.");
@@ -135,6 +159,45 @@ document.getElementById("signButton").addEventListener("click", async (e) => {
     }
 });
 
+// returns 50 items per call
+const get_balances = async (address, continuation) => {
+    const url = `https://api.ordex.io/v0.1/items/byOwner?owner=ETHEREUM:${address}&continuation=${continuation}`
+    const response = await fetch(url)
+    const result = await response.json()
+
+    return result
+}
+
+const get_all_balances = async (address) => {
+    const balances = []
+    let continuation = null
+
+    while(true) {
+        const result = await get_balances(address, continuation)
+
+        if(result.items.length === 0) {
+            break
+        }
+
+        balances.push(...result.items)
+
+        if (!result.continuation) {
+            break
+        }
+
+        continuation = result.continuation
+    }
+
+    return balances
+}
+
+/*
+This function is taken from the old ORDEX website
+
+https://x.com/0xHirsch/status/1859687418502459412
+https://web.archive.org/web/20240903043125js_/https://ordex.io/_next/static/chunks/pages/_app-afac391acedcf9da.js
+
+*/
 function nB(e, t) {
     let r = e.join(", "),
         n = "";
@@ -156,6 +219,64 @@ Signing this message does not cost gas.
 
 This signature expires at: ${a}`;
     return `I would like to ${n}${e.length>1?"s":""}: ${r} ${s}`
+}
+
+document.getElementById("fillButton").addEventListener("click", async (e) => {
+    try {
+        e.preventDefault();
+
+        document.getElementById("ethscriptionid").value = ethscriptionid_balances.join(',')
+
+        disable_button('signButton', false)
+    } catch (error) {
+        console.error("Failed to fill in ethscription ids:", error);
+    }
+});
+
+const parseEthscriptionData = (rawContent, number, name) => {
+    if(rawContent.includes('data:image/')) {
+        return `<img title="Ethscription #${number} (${name})" src="${rawContent}" class="img-fluid">`
+    }
+
+    if(rawContent.includes('data:text/html;')) {
+        return `<iframe src="${rawContent}" sandbox="allow-scripts"></iframe>`
+    }
+
+    if(rawContent.includes('data:application/json;')) {
+        const stripped_json = rawContent.replace('data:application/json;base64,', '')
+        const decoded_json = atob(stripped_json)
+
+        return `<span title="Ethscription #${number} (${name})">${decoded_json}</span>`
+    }
+
+    return `<span title="Ethscription #${number} (${name})">${rawContent.replace('data:,', '')}</span>`
+}
+
+const parse_balances = (container, balances, state = 'EMPTY') => {
+    let html = ''
+
+    balances.forEach(b => {
+        const { id, meta } = b
+        const { name, number, rawContent } = meta
+        const ethscription_id = id.split(':')[1]
+
+        if(state === 'PENDING') {
+            ethscriptionid_balances.push(ethscription_id)
+        }
+
+        html += `<div class="col-12 col-sm-6 col-md-3 col-xl-1">`
+        html += `<a href="https://ethscriptions.com/ethscriptions/${ethscription_id}" target="_blank">`
+        html += parseEthscriptionData(rawContent, number, name)
+        html += `</a>`
+        html += `</div>`
+    })
+
+    if(balances.length === 0) {
+        html = 'No items found'
+    }
+
+    document.getElementById(container).innerHTML = html
+    document.getElementById(`${container}Container`).classList.remove('d-none')
 }
 
 const init = async () => {
