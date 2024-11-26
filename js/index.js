@@ -33,8 +33,8 @@ const send_contract_withdrawal = async (ordex_api_response) => {
             r,
             s
         };
-
-        document.getElementById("signButton").disabled = true
+        
+        disable_button("signButton", true)
 
         console.log('sending..')
 
@@ -50,6 +50,7 @@ const send_contract_withdrawal = async (ordex_api_response) => {
         document.getElementById("error-msg").classList.remove("d-none")
         document.getElementById("error-msg").innerHTML = `Error sending transaction. Check console for details.`
         document.getElementById("ethscriptionid").value = ''
+        disable_button("signButton", false)
 
         console.error(error);
     }
@@ -88,7 +89,8 @@ document.getElementById("connectButton").addEventListener("click", async (e) => 
         const escrowed_balances = sorted_balances.filter(b => b.extension.escrowState === 'PENDING')
         
         if(escrowed_balances.length > 0) {
-            document.getElementById("fillButton").disabled = false
+            disable_button('fillButton', false)
+            disable_button('signButton', false)
         }
 
         parse_balances('items', sorted_balances.filter(b => b.extension.escrowState === 'EMPTY'))
